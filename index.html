@@ -1,47 +1,162 @@
 <!DOCTYPE html>
-<html lang="mr">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>तालुका योजना डॅशबोर्ड</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Dashboard 1</title>
+  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; background: #f4f6fa; color: #232323; 
+    }
+    .dashboard-container { 
+      max-width: 1200px; margin: 40px auto; background: #fff; box-shadow: 0 2px 12px #eee;
+      border-radius: 10px; padding: 30px;
+    }
+    .select-row { display: flex; gap: 30px; margin-bottom: 24px; align-items: flex-start; }
+    .column { flex: 1; background: #eaf4fb; border-radius: 8px; padding: 18px; }
+    .form-section { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
+    .submit-reset { margin-top: 18px; display: flex; gap: 12px; }
+    button { background: #1976d2; color: #fff; padding: 10px 20px; border: none; border-radius: 4px; }
+    button:active, button:hover { background: #0d5691; }
+    .checkbox-list, .taluka-list { max-height: 140px; overflow-y: auto; }
+    .taluka-btn { display: inline-block; margin: 4px; background: #98c6ef; color: #fff; border: none; border-radius: 16px; padding: 8px 14px; cursor: pointer;}
+    .taluka-btn.selected { background: #1976d2; }
+    .kpi-row { display: flex; gap: 30px; margin-bottom: 30px; margin-top: 22px;}
+    .kpi-block { flex: 1; background: #e2f6da; border-radius: 8px; text-align: center; padding: 24px 0; font-size: 1.2em; display: flex; flex-direction: column; align-items: center;}
+    .kpi-block.emoji-1 { background: #fff4c6;}
+    .kpi-block.emoji-2 { background: #e4eaff;}
+    .kpi-block .emoji { font-size: 2em; margin-bottom: 6px; }
+    .charts-row { display: flex; gap: 30px; }
+    .chart-container { flex: 1; background: #f7ebdf; border-radius: 8px; padding: 14px; }
+    .data-table { width:100%; border-collapse: collapse; margin-top:36px;}
+    .data-table th, .data-table td { padding: 10px 14px; border: 1px solid #dbe3e7; background: #fafcff;}
+    .data-table th { background: #1976d2; color: #fff;}
+    .filter-highlight { background: #e6f3fa; font-weight: bold; }
+    @media (max-width: 900px) {
+      .select-row, .kpi-row, .charts-row { flex-direction: column; gap: 16px;}
+    }
+  </style>
 </head>
 <body>
-  <h2>📊 तालुका योजना डॅशबोर्ड</h2>
-
-  <div class="filter-container">
-    <div>
-      <label><strong>योजना निवडा:</strong></label>
-      <select id="schemeSelect" multiple></select>
+  <div class="dashboard-container">
+    <div class="select-row">
+      <!-- Column 1: Scheme Dropdown + Checkboxes -->
+      <div class="column">
+        <label for="scheme-select"><b>Select Schemes:</b></label>
+        <div class="checkbox-list" id="scheme-checkboxes">
+          <label><input type="checkbox" value="Scheme 1"> Scheme 1</label><br>
+          <label><input type="checkbox" value="Scheme 2"> Scheme 2</label><br>
+          <label><input type="checkbox" value="Scheme 3"> Scheme 3</label><br>
+          <label><input type="checkbox" value="Scheme 4"> Scheme 4</label><br>
+          <!-- Add more as needed -->
+        </div>
+        <div class="submit-reset">
+          <button onclick="submitSelections()">Submit</button>
+          <button onclick="resetSelections()">Reset</button>
+        </div>
+      </div>
+      <!-- Column 2: Taluka Multi-Select as Buttons -->
+      <div class="column">
+        <label for="taluka-select"><b>Select Taluka:</b></label>
+        <div class="taluka-list" id="taluka-buttons">
+          <button class="taluka-btn" onclick="toggleTaluka(this)">Taluka A</button>
+          <button class="taluka-btn" onclick="toggleTaluka(this)">Taluka B</button>
+          <button class="taluka-btn" onclick="toggleTaluka(this)">Taluka C</button>
+          <button class="taluka-btn" onclick="toggleTaluka(this)">Taluka D</button>
+          <!-- Add more as needed -->
+        </div>
+      </div>
     </div>
-    <div>
-      <label><strong>तालुका निवडा:</strong></label>
-      <div id="talukaButtons" class="taluka-btn-group"></div>
-    </div>
-  </div>
 
-  <div class="kpi-wrapper" id="kpiWrapper"></div>
-
-  <div class="chart-row">
-    <div class="chart-container">
-      <h4>तालुका निहाय प्रगती (बार चार्ट)</h4>
-      <canvas id="barChart"></canvas>
+    <!-- KPIs Section -->
+    <div class="kpi-row">
+      <div class="kpi-block emoji-1"><span class="emoji">🥇</span><b>Top 5</b><div>Value: 123</div></div>
+      <div class="kpi-block emoji-2"><span class="emoji">✨</span><b>Middle 5</b><div>Value: 67</div></div>
+      <div class="kpi-block" style="background: #ffc9e6;"><span class="emoji">🔻</span><b>Bottom 5</b><div>Value: 18</div></div>
     </div>
-    <div class="chart-container">
-      <h4>सर्वोत्तम योजना (डोनट चार्ट)</h4>
-      <canvas id="donutChart"></canvas>
-    </div>
-  </div>
 
-  <div class="table-section">
-    <h4>रँकिंग तक्ता</h4>
-    <table id="rankingTable">
-      <thead></thead>
-      <tbody></tbody>
+    <!-- Charts Section -->
+    <div class="charts-row">
+      <div class="chart-container">
+        <canvas id="rankChart" width="350" height="225"></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas id="schemeChart" width="350" height="225"></canvas>
+      </div>
+    </div>
+    
+    <!-- Interactive Table -->
+    <table class="data-table" id="dataTable">
+      <thead>
+        <tr>
+          <th>Sr.</th>
+          <th>Schemes</th>
+          <th>Taluka</th>
+          <th>Rank</th>
+          <th>Score</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td><td>S1</td><td>Taluka A</td><td>1</td><td>90</td><td>✔️</td>
+        </tr>
+        <tr>
+          <td>2</td><td>S2</td><td>Taluka B</td><td>2</td><td>88</td><td>✔️</td>
+        </tr>
+        <tr>
+          <td>3</td><td>S3</td><td>Taluka D</td><td>3</td><td>72</td><td>🔄</td>
+        </tr>
+        <!-- ... more rows ... -->
+      </tbody>
     </table>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Minimal JS for demo functionality -->
+  <script>
+    // --- Taluka button toggle ---
+    function toggleTaluka(btn) {
+      btn.classList.toggle('selected');
+    }
+    // --- Reset Selections ---
+    function resetSelections() {
+      document.querySelectorAll('#scheme-checkboxes input[type=checkbox]')
+        .forEach(cb => cb.checked = false);
+      document.querySelectorAll('.taluka-btn').forEach(b => b.classList.remove('selected'));
+      // Optionally, reset charts/table here
+    }
+    // --- Submit logic (demo, actual logic to be linked with backend/data) ---
+    function submitSelections() {
+      alert('Submitted! (Demo: Hook up filtering + chart data here)');
+      // Here, collect checked schemes, selected talukas, and update charts/table accordingly
+    }
+
+    // --- Chart.js (Sample Data, replace with dynamic data as needed) ---
+    const rankChart = new Chart(document.getElementById('rankChart'), {
+      type: 'bar',
+      data: {
+        labels: ['S1','S2','S3','S4','S5'],
+        datasets: [{
+          label: 'Rank',
+          data: [90, 88, 72, 65, 60],
+          backgroundColor: '#1976d2'
+        }]
+      },
+      options: { responsive:false, plugins: { legend:{display: false}}}
+    });
+
+    const schemeChart = new Chart(document.getElementById('schemeChart'), {
+      type: 'pie',
+      data: {
+        labels: ['Scheme 1','Scheme 2','Scheme 3','Scheme 4','Scheme 5'],
+        datasets: [{
+          data: [35,24,16,13,11],
+          backgroundColor: ['#ffd54f','#64b5f6','#e57373','#81c784','#ba68c8'],
+        }]
+      },
+      options: { responsive:false }
+    });
+  </script>
 </body>
 </html>
