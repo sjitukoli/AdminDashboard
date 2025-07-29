@@ -45,11 +45,7 @@
       <div class="column">
         <label for="scheme-select"><b>Select Schemes:</b></label>
         <div class="checkbox-list" id="scheme-checkboxes">
-          <label><input type="checkbox" value="Scheme 1"> Scheme 1</label><br>
-          <label><input type="checkbox" value="Scheme 2"> Scheme 2</label><br>
-          <label><input type="checkbox" value="Scheme 3"> Scheme 3</label><br>
-          <label><input type="checkbox" value="Scheme 4"> Scheme 4</label><br>
-          <!-- Add more as needed -->
+          <!-- These will be populated from fetched data -->
         </div>
         <div class="submit-reset">
           <button onclick="submitSelections()">Submit</button>
@@ -60,22 +56,16 @@
       <div class="column">
         <label for="taluka-select"><b>Select Taluka:</b></label>
         <div class="taluka-list" id="taluka-buttons">
-          <button class="taluka-btn" onclick="toggleTaluka(this)">Taluka A</button>
-          <button class="taluka-btn" onclick="toggleTaluka(this)">Taluka B</button>
-          <button class="taluka-btn" onclick="toggleTaluka(this)">Taluka C</button>
-          <button class="taluka-btn" onclick="toggleTaluka(this)">Taluka D</button>
-          <!-- Add more as needed -->
+          <!-- These will be populated from fetched data -->
         </div>
       </div>
     </div>
-
     <!-- KPIs Section -->
-    <div class="kpi-row">
-      <div class="kpi-block emoji-1"><span class="emoji">🥇</span><b>Top 5</b><div>Value: 123</div></div>
-      <div class="kpi-block emoji-2"><span class="emoji">✨</span><b>Middle 5</b><div>Value: 67</div></div>
-      <div class="kpi-block" style="background: #ffc9e6;"><span class="emoji">🔻</span><b>Bottom 5</b><div>Value: 18</div></div>
+    <div class="kpi-row" id="kpi-row">
+      <div class="kpi-block emoji-1"><span class="emoji">🥇</span><b>Top 5</b><div id="kpi-top">-</div></div>
+      <div class="kpi-block emoji-2"><span class="emoji">✨</span><b>Middle 5</b><div id="kpi-middle">-</div></div>
+      <div class="kpi-block" style="background: #ffc9e6;"><span class="emoji">🔻</span><b>Bottom 5</b><div id="kpi-bottom">-</div></div>
     </div>
-
     <!-- Charts Section -->
     <div class="charts-row">
       <div class="chart-container">
@@ -85,7 +75,6 @@
         <canvas id="schemeChart" width="350" height="225"></canvas>
       </div>
     </div>
-    
     <!-- Interactive Table -->
     <table class="data-table" id="dataTable">
       <thead>
@@ -99,64 +88,186 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>1</td><td>S1</td><td>Taluka A</td><td>1</td><td>90</td><td>✔️</td>
-        </tr>
-        <tr>
-          <td>2</td><td>S2</td><td>Taluka B</td><td>2</td><td>88</td><td>✔️</td>
-        </tr>
-        <tr>
-          <td>3</td><td>S3</td><td>Taluka D</td><td>3</td><td>72</td><td>🔄</td>
-        </tr>
-        <!-- ... more rows ... -->
+        <!-- Table rows will be inserted here -->
       </tbody>
     </table>
   </div>
+<script>
+const API_KEY = "AIzaSyD1zkB93JoLUrNX7nN2qEcavFRE-P1r9Eg";
+const SHEET_ID = "1y_EVqNg-reS3xV-Kn6cmTou7u_6kuyqykNdgdzXEMkE";
+const SHEET_RANGE = "Rank!BF5:AI5"; // Change if your sheet headers/data are in a different range
 
-  <!-- Minimal JS for demo functionality -->
-  <script>
-    // --- Taluka button toggle ---
-    function toggleTaluka(btn) {
-      btn.classList.toggle('selected');
-    }
-    // --- Reset Selections ---
-    function resetSelections() {
-      document.querySelectorAll('#scheme-checkboxes input[type=checkbox]')
-        .forEach(cb => cb.checked = false);
-      document.querySelectorAll('.taluka-btn').forEach(b => b.classList.remove('selected'));
-      // Optionally, reset charts/table here
-    }
-    // --- Submit logic (demo, actual logic to be linked with backend/data) ---
-    function submitSelections() {
-      alert('Submitted! (Demo: Hook up filtering + chart data here)');
-      // Here, collect checked schemes, selected talukas, and update charts/table accordingly
-    }
+let rawData = [];
+let schemeSet = new Set();
+let talukaSet = new Set();
+let rankChart, schemeChart;
 
-    // --- Chart.js (Sample Data, replace with dynamic data as needed) ---
-    const rankChart = new Chart(document.getElementById('rankChart'), {
-      type: 'bar',
-      data: {
-        labels: ['S1','S2','S3','S4','S5'],
-        datasets: [{
-          label: 'Rank',
-          data: [90, 88, 72, 65, 60],
-          backgroundColor: '#1976d2'
-        }]
-      },
-      options: { responsive:false, plugins: { legend:{display: false}}}
+function getStatusEmoji(status) {
+  // Map status to emoji (Adjust mapping as needed)
+  if (status === "Yes" || status === "✔️") return "✔️";
+  if (status === "No" || status === "🔻") return "🔻";
+  return status;
+}
+
+// Fetch data and initialize dashboard
+function fetchDataAndInit() {
+  fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_RANGE}?key=${API_KEY}`)
+    .then(response => response.json())
+    .then(json => {
+      const values = json.values;
+      if (!values || values.length === 0) {
+        alert("No data found in the sheet range.");
+        return;
+      }
+
+      // Example parsing - adjust for your exact sheet columns
+      // Here, each value[0] is assumed like: ['Scheme', 'Taluka', 'Rank', 'Score', 'Status', ...]
+      const header = values[0];
+      const dataRows = values.slice(1);
+      rawData = [];
+      schemeSet.clear();
+      talukaSet.clear();
+
+      // If your sheet has more rows, change this accordingly!
+      for (const row of dataRows) {
+        let scheme = row[0] || "";
+        let taluka = row[1] || "";
+        let rank = parseInt(row[2] || 0, 10);
+        let score = parseInt(row[3] || 0, 10);
+        let status = getStatusEmoji(row[4] || "");
+        rawData.push({ scheme, taluka, rank, score, status });
+        schemeSet.add(scheme);
+        talukaSet.add(taluka);
+      }
+      // Populate selectors
+      populateSchemes();
+      populateTalukas();
+
+      // Initial dashboard draw (full data)
+      updateDashboard(rawData);
+    })
+    .catch(error => {
+      alert("❌ Error fetching data: " + error);
+      console.error(error);
     });
+}
 
-    const schemeChart = new Chart(document.getElementById('schemeChart'), {
-      type: 'pie',
-      data: {
-        labels: ['Scheme 1','Scheme 2','Scheme 3','Scheme 4','Scheme 5'],
-        datasets: [{
-          data: [35,24,16,13,11],
-          backgroundColor: ['#ffd54f','#64b5f6','#e57373','#81c784','#ba68c8'],
-        }]
-      },
-      options: { responsive:false }
-    });
-  </script>
+function populateSchemes() {
+  const scDiv = document.getElementById("scheme-checkboxes");
+  scDiv.innerHTML = "";
+  let idx = 0;
+  for (let scheme of Array.from(schemeSet)) {
+    if (!scheme) continue;
+    scDiv.innerHTML += `<label><input type="checkbox" name="scheme" value="${scheme}"> ${scheme}</label><br>`;
+    idx++;
+  }
+}
+function populateTalukas() {
+  const tDiv = document.getElementById("taluka-buttons");
+  tDiv.innerHTML = "";
+  for (let taluka of Array.from(talukaSet)) {
+    if (!taluka) continue;
+    tDiv.innerHTML += `<button class="taluka-btn" onclick="toggleTaluka(this)">${taluka}</button>`;
+  }
+}
+
+function toggleTaluka(btn) {
+  btn.classList.toggle('selected');
+}
+
+function resetSelections() {
+  document.querySelectorAll('#scheme-checkboxes input[type=checkbox]')
+    .forEach(cb => cb.checked = false);
+  document.querySelectorAll('.taluka-btn').forEach(b => b.classList.remove('selected'));
+  updateDashboard(rawData);
+}
+
+function submitSelections() {
+  let selectedSchemes = Array.from(document.querySelectorAll('#scheme-checkboxes input[type=checkbox]:checked')).map(x => x.value);
+  let selectedTalukas = Array.from(document.querySelectorAll('.taluka-btn.selected')).map(x => x.innerText);
+
+  let filtered = rawData.filter(row => {
+    let scFilter = selectedSchemes.length === 0 || selectedSchemes.includes(row.scheme);
+    let tFilter = selectedTalukas.length === 0 || selectedTalukas.includes(row.taluka);
+    return scFilter && tFilter;
+  });
+  updateDashboard(filtered);
+}
+
+/* --- Chart and Table Updating Logic --- */
+function updateDashboard(data) {
+  // KPIs: sort by Rank and get blocks
+  let sorted = [...data].sort((a, b) => a.rank - b.rank);
+  let top5 = sorted.slice(0, 5);
+  let middle5 = sorted.slice(5, 10);
+  let bottom5 = sorted.slice(-5);
+
+  document.getElementById('kpi-top').innerText = top5.reduce((sum, r) => sum + r.score, 0); // Or whatever logic you want
+  document.getElementById('kpi-middle').innerText = middle5.reduce((sum, r) => sum + r.score, 0);
+  document.getElementById('kpi-bottom').innerText = bottom5.reduce((sum, r) => sum + r.score, 0);
+
+  // --- Chart: Ranks (bar) ---
+  let rankLabels = top5.map(r => r.scheme + " (" + r.taluka + ")");
+  let rankScores = top5.map(r => r.rank);
+  if (rankChart) rankChart.destroy();
+  rankChart = new Chart(document.getElementById('rankChart'), {
+    type: 'bar',
+    data: {
+      labels: rankLabels,
+      datasets: [{
+        label: 'Rank',
+        data: rankScores,
+        backgroundColor: '#1976d2'
+      }]
+    },
+    options: { 
+      responsive: false, 
+      plugins: { legend: {display: false}},
+      scales: { y: { beginAtZero: true, reverse: false } }
+    }
+  });
+
+  // --- Chart: Schemes (pie) ---
+  let schemeCounts = {};
+  for (let r of data) {
+    if (r.scheme) schemeCounts[r.scheme] = (schemeCounts[r.scheme] || 0) + 1;
+  }
+  let schemePieLabels = Object.keys(schemeCounts);
+  let schemePieData = Object.values(schemeCounts);
+  let colors = ['#ffd54f', '#64b5f6', '#e57373', '#81c784', '#ba68c8', '#f06292', '#fff176', '#4dd0e1', '#8d6e63', '#dce775'];
+  if (schemeChart) schemeChart.destroy();
+  schemeChart = new Chart(document.getElementById('schemeChart'), {
+    type: 'pie',
+    data: {
+      labels: schemePieLabels,
+      datasets: [{
+        data: schemePieData,
+        backgroundColor: colors
+      }]
+    },
+    options: { responsive:false }
+  });
+
+  // --- Table ---
+  const tbody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+  tbody.innerHTML = "";
+  data.forEach((row, i) => {
+    let status = getStatusEmoji(row.status);
+    tbody.innerHTML += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${row.scheme}</td>
+        <td>${row.taluka}</td>
+        <td>${row.rank}</td>
+        <td>${row.score}</td>
+        <td>${status}</td>
+      </tr>
+    `;
+  });
+}
+
+// First load
+fetchDataAndInit();
+</script>
 </body>
 </html>
