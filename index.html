@@ -1,16 +1,25 @@
 <!DOCTYPE html>
 <html lang="mr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>तालुका योजना डॅशबोर्ड</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-
   <h2>📊 तालुका योजना डॅशबोर्ड</h2>
+
+  <div class="filter-container">
+    <div>
+      <label><strong>योजना निवडा:</strong></label>
+      <select id="schemeSelect" multiple></select>
+    </div>
+    <div>
+      <label><strong>तालुका निवडा:</strong></label>
+      <div id="talukaButtons" class="taluka-btn-group"></div>
+    </div>
+  </div>
 
   <div class="kpi-wrapper" id="kpiWrapper"></div>
 
