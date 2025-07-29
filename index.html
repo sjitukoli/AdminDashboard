@@ -6,12 +6,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f7fb;
+      color: #111827;
+    }
+    h2 {
+      text-align: center;
+      color: #1e3a8a;
+      margin-bottom: 30px;
+    }
+    .chart-container {
+      width: 100%;
+      max-width: 480px;
+      height: 300px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      padding: 20px;
+    }
+    .footer-note {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-top: 30px;
+    }
+  </style>
 </head>
 <body>
-  <h2>तालुका योजना डॅशबोर्ड</h2>
-  <p>Page load होतेय तेव्हा आपल्या Google Sheet मधून data आपोआप लोड होईल, तुम्हाला काही बटण क्लिक करायची गरज नाही.</p>
 
-  <canvas id="donutChart" width="400" height="250"></canvas>
+  <h2>📊 तालुका योजना डॅशबोर्ड</h2>
+
+  <div class="chart-container">
+    <canvas id="donutChart"></canvas>
+  </div>
+
+  <div class="footer-note">
+    Source: Google Sheets | Auto-loaded data using API
+  </div>
 
   <script>
     const sheetId = "1y_EVqNg-reS3xV-Kn6cmTou7u_6kuyqykNdgdzXEMkE";
@@ -26,20 +62,17 @@
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
       axios.get(url)
         .then(res => {
-          console.log("✅ Data fetched:", res.data.values);
           const row = res.data.values?.[0] || [];
           if(row.length === 0){
-            document.body.insertAdjacentHTML('beforeend',
-              '<p style="color:red;">Sheet मध्ये BF5:AI5 मध्ये डेटा नाही.</p>');
+            alert("डेटा उपलब्ध नाही. Sheet मध्ये BF5:AI5 range check करा.");
             return;
           }
           const data = row.map(x => parseFloat(x) || 0);
           renderDonutChart(data);
         })
         .catch(err => {
-          console.error("Error fetching data:", err);
-          document.body.insertAdjacentHTML('beforeend',
-            '<p style="color:red;">डेटा लोड करताना त्रुटी: Console मध्ये पाहा.</p>');
+          console.error("Error:", err);
+          alert("डेटा लोड करण्यात अडचण. Console तपासा.");
         });
     }
 
@@ -69,5 +102,6 @@
       });
     }
   </script>
+
 </body>
 </html>
