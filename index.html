@@ -1,15 +1,73 @@
 <!DOCTYPE html>
 <html lang="mr">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>तालुका योजना डॅशबोर्ड</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
   <h2>तालुका योजना डॅशबोर्ड</h2>
-  <button onclick="loadSheetData()">🔄 डेटा लोड करा</button>
+  <p>Page load होतेय तेव्हा आपल्या Google Sheet मधून data आपोआप लोड होईल, तुम्हाला काही बटण क्लिक करायची गरज नाही.</p>
+
   <canvas id="donutChart" width="400" height="250"></canvas>
-  <script src="script.js"></script>
+
+  <script>
+    const sheetId = "1y_EVqNg-reS3xV-Kn6cmTou7u_6kuyqykNdgdzXEMkE";
+    const apiKey = "AIzaSyD1zkB93JoLUrNX7nN2qEcavFRE-P1r9Eg";
+    const range = "Rank!BF5:AI5";
+
+    window.onload = () => {
+      loadSheetData();
+    };
+
+    function loadSheetData(){
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+      axios.get(url)
+        .then(res => {
+          console.log("✅ Data fetched:", res.data.values);
+          const row = res.data.values?.[0] || [];
+          if(row.length === 0){
+            document.body.insertAdjacentHTML('beforeend',
+              '<p style="color:red;">Sheet मध्ये BF5:AI5 मध्ये डेटा नाही.</p>');
+            return;
+          }
+          const data = row.map(x => parseFloat(x) || 0);
+          renderDonutChart(data);
+        })
+        .catch(err => {
+          console.error("Error fetching data:", err);
+          document.body.insertAdjacentHTML('beforeend',
+            '<p style="color:red;">डेटा लोड करताना त्रुटी: Console मध्ये पाहा.</p>');
+        });
+    }
+
+    function renderDonutChart(dataRow){
+      const ctx = document.getElementById("donutChart").getContext("2d");
+      const labels = dataRow.map((_,i) => `Scheme ${i+1}`);
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data: dataRow,
+            backgroundColor: [
+              "#42a5f5","#66bb6a","#ffa726","#ec407a","#ab47bc",
+              "#26c6da","#ffca28","#8d6e63","#789262","#ef5350",
+              "#7e57c2","#29b6f6"
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right' }
+          }
+        }
+      });
+    }
+  </script>
 </body>
 </html>
