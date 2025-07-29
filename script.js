@@ -1,102 +1,95 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 10px;
+  background: #f4f6f9;
+}
+h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+.filter-container {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+select {
+  min-width: 180px;
+  padding: 6px;
+}
+.taluka-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.taluka-btn-group button {
+  background: #e0e7ff;
+  border: 1px solid #94a3b8;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.taluka-btn-group button.active {
+  background: #4f46e5;
+  color: white;
+}
+.kpi-wrapper {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px auto;
+  flex-wrap: wrap;
+}
+.kpi {
+  flex: 1;
+  min-width: 180px;
+  background: #eef;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.kpi.top { background: #bbf7d0; }
+.kpi.mid { background: #fef9c3; }
+.kpi.bot { background: #fecaca; }
 
-const sheetId = "1y_EVqNg-reS3xV-Kn6cmTou7u_6kuyqykNdgdzXEMkE";
-const apiKey = "AIzaSyD1zkB93JoLUrNX7nN2qEcavFRE-P1r9Eg";
-const range = "Rank!BF5:AI20";
-let barChart, donutChart;
-
-window.onload = () => {
-  loadSheetData();
-};
-
-function loadSheetData(){
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
-  axios.get(url)
-    .then(res => {
-      const rows = res.data.values || [];
-      if (!rows.length) return alert("डेटा उपलब्ध नाही.");
-      processData(rows);
-    })
-    .catch(err => {
-      console.error("Error:", err);
-      alert("डेटा लोड करण्यात अडचण.");
-    });
+.chart-row {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 20px;
+}
+.chart-container {
+  width: 45%;
+  min-width: 320px;
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-function processData(rows){
-  const schemes = rows[0];
-  const values = rows.slice(1).map(r => r.map(x => parseFloat(x) || 0));
-  const totals = values.map((row, i) => ({
-    taluka: "तालुका " + (i + 1),
-    values: row,
-    total: row.reduce((a,b) => a+b, 0)
-  }));
-  const sorted = [...totals].sort((a,b) => b.total - a.total);
-
-  renderBarChart(sorted, schemes);
-  renderDonutChart(sorted.slice(0, 5));
-  renderKPI(sorted);
-  renderTable(sorted, schemes);
+.table-section {
+  margin-top: 25px;
 }
-
-function renderBarChart(data, schemes){
-  const ctx = document.getElementById("barChart").getContext("2d");
-  barChart?.destroy();
-  barChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: data.map(d => d.taluka),
-      datasets: [{
-        label: "एकूण गुण",
-        data: data.map(d => d.total),
-        backgroundColor: "#60a5fa"
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } }
-    }
-  });
+table {
+  width: 100%;
+  border-collapse: collapse;
 }
-
-function renderDonutChart(data){
-  const ctx = document.getElementById("donutChart").getContext("2d");
-  donutChart?.destroy();
-  donutChart = new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: data.map(d => d.taluka),
-      datasets: [{
-        data: data.map(d => d.total),
-        backgroundColor: ["#4ade80","#facc15","#f87171","#60a5fa","#c084fc"]
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: "right" } }
-    }
-  });
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  text-align: center;
 }
-
-function renderKPI(data){
-  const top = data[0], mid = data[Math.floor(data.length/2)], bot = data.at(-1);
-  document.getElementById("kpiWrapper").innerHTML = `
-    <div class="kpi">🏆 टॉप तालुका<br>${top.taluka}<br>${top.total}</div>
-    <div class="kpi">⚖️ मध्यम तालुका<br>${mid.taluka}<br>${mid.total}</div>
-    <div class="kpi">🚨 तळातला तालुका<br>${bot.taluka}<br>${bot.total}</div>
-  `;
+thead {
+  background: #4f46e5;
+  color: white;
 }
-
-function renderTable(data, schemes){
-  const thRow = `<tr><th>रँक</th><th>तालुका</th><th>एकूण गुण</th>${
-    schemes.map(s => `<th>${s}</th>`).join("")
-  }</tr>`;
-  const trRows = data.map((d, i) => `
-    <tr>
-      <td>${i+1}</td><td>${d.taluka}</td><td>${d.total}</td>${
-        d.values.map(v => `<td>${v}</td>`).join("")
-      }
-    </tr>
-  `).join("");
-  document.querySelector("#rankingTable thead").innerHTML = thRow;
-  document.querySelector("#rankingTable tbody").innerHTML = trRows;
+tbody tr:nth-child(odd) {
+  background: #f9f9f9;
 }
+tbody tr.top5 { background: #bbf7d0; }
+tbody tr.mid5 { background: #fef08a; }
+tbody tr.bot5 { background: #fecaca; }
